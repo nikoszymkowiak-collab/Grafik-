@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Grafik">
+<meta name="theme-color" content="#0f172a">
+<title>Grafik</title>
+<style>
+:root{--bg:#0f172a;--sur:#1e293b;--sur2:#263347;--bor:rgba(255,255,255,.08);--txt:#f1f5f9;--mut:#94a3b8;--fnt:#475569;--acc:#3b82f6;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;padding-top:var(--safe-t)}
+.topbar{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bor);flex-shrink:0}
+.topbar h1{font-size:20px;font-weight:700;letter-spacing:-.4px}
+.topbar p{font-size:12px;color:var(--mut);margin-top:1px}
+.today-btn{background:var(--acc);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.weeknav{display:flex;align-items:center;padding:8px 12px;gap:8px;border-bottom:1px solid var(--bor);flex-shrink:0}
+.weeknav button{background:none;border:1px solid var(--bor);border-radius:8px;color:var(--mut);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0}
+.wlabel{flex:1;text-align:center;font-size:13px;font-weight:600}
+.day-headers{display:grid;grid-template-columns:40px repeat(7,1fr);border-bottom:1px solid var(--bor);flex-shrink:0;padding-bottom:6px}
+.dh{text-align:center;padding:6px 2px 0}
+.dh .dow{font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.dh .dom{font-size:16px;font-weight:700;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:2px auto 0}
+.dh .dom.today{background:var(--acc);color:#fff}
+.grid-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.grid{display:grid;grid-template-columns:40px repeat(7,1fr);position:relative}
+.time-cell{height:52px;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 0}
+.time-cell span{font-size:10px;color:var(--fnt)}
+.day-col{position:relative;border-left:1px solid var(--bor)}
+.hour-cell{height:52px;border-bottom:1px solid var(--bor);position:relative}
+.half-line{position:absolute;top:26px;left:0;right:0;border-top:1px solid var(--bor);opacity:.4}
+.event{position:absolute;left:2px;right:2px;border-radius:6px;padding:3px 5px;cursor:pointer;overflow:hidden}
+.event .et{font-size:11px;font-weight:700;line-height:1.2;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event .es{font-size:10px;color:rgba(255,255,255,.75);margin-top:1px}
+.now-line{position:absolute;left:0;right:0;height:2px;background:#f43f5e;z-index:5;pointer-events:none}
+.now-dot{position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#f43f5e}
+.fab-wrap{position:absolute;bottom:calc(16px + var(--safe-b));right:16px;z-index:20}
+.fab{width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30;display:flex;align-items:flex-end}
+.sheet{background:var(--sur);border-radius:20px 20px 0 0;padding:20px 18px calc(20px + var(--safe-b));width:100%;border-top:1px solid var(--bor)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--fnt);margin:0 auto 16px}
+.sheet-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.field input,.field select{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 12px;font-size:15px;color:var(--txt);-webkit-appearance:none}
+.field input:focus,.field select:focus{outline:none;border-color:var(--acc)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cats{display:flex;gap:8px;flex-wrap:wrap}
+.cpill{padding:6px 14px;border-radius:20px;border:1px solid var(--bor);background:none;color:var(--mut);font-size:13px;font-weight:600;cursor:pointer}
+.cpill.on{color:#fff;border-color:transparent}
+.sheet-btns{display:flex;gap:10px;margin-top:16px}
+.sheet-btns button{flex:1;padding:12px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none}
+.bc{background:var(--sur2);color:var(--mut)}
+.bs{background:var(--acc);color:#fff}
+.legend{display:flex;gap:14px;padding:8px 16px calc(8px + var(--safe-b));border-top:1px solid var(--bor);flex-shrink:0;overflow-x:auto}
+.leg{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.leg span{font-size:11px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div><h1>Mój grafik</h1><p id="mlabel"></p></div>
+    <button class="today-btn" onclick="goToday()">Dziś</button>
+  </div>
+  <div class="weeknav">
+    <button onclick="prevWeek()">‹</button>
+    <span class="wlabel" id="wlabel"></span>
+    <button onclick="nextWeek()">›</button>
+  </div>
+  <div class="day-headers" id="dhdrs"></div>
+  <div class="grid-wrap" id="gwrap"><div class="grid" id="grid"></div></div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#2563eb"></div><span>Praca</span></div>
+    <div class="leg"><div class="leg-dot" style="background:#059669"></div><span>Trening</span></div>
+    <div class="leg"><div class="leg-dot" style="background:#7c3aed"></div><span>Odpoczynek</span></div>
+    <div class="leg"><div class="leg-dot" style="background:#d97706"></div><span>Inne</span></div>
+  </div>
+  <div class="fab-wrap"><button class="fab" onclick="openModal(null,null)">+</button></div>
+</div>
+<script>
+const CATS={praca:{l:'Praca',c:'#2563eb'},trening:{l:'Trening',c:'#059669'},odpoczynek:{l:'Odpoczynek',c:'#7c3aed'},inne:{l:'Inne',c:'#d97706'}};
+const DOW=['Pn','Wt','Śr','Cz','Pt','Sb','Nd'];
+const MON=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const TODAY=new Date();
+const HH=52;
+let weekStart=monday(TODAY),events=[],form={name:'',date:'',timeFrom:'08:00',timeTo:'09:00',cat:'praca'};
+try{events=JSON.parse(localStorage.getItem('grf3')||'[]')}catch(e){}
+function save(){try{localStorage.setItem('grf3',JSON.stringify(events))}catch(e){}}
+function monday(d){const r=new Date(d);r.setHours(0,0,0,0);const dw=r.getDay();r.setDate(r.getDate()-(dw===0?6:dw-1));return r}
+function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
+function dk(d){return d.toISOString().slice(0,10)}
+function tm(t){const[h,m]=t.split(':').map(Number);return h*60+m}
+function pad(n){return String(n).padStart(2,'0')}
+function prevWeek(){weekStart=addD(weekStart,-7);render()}
+function nextWeek(){weekStart=addD(weekStart,7);render()}
+function goToday(){weekStart=monday(TODAY);render();scrollNow()}
+function wlabel(){const e=addD(weekStart,6);return weekStart.getMonth()===e.getMonth()?weekStart.getDate()+'–'+e.getDate()+' '+MON[weekStart.getMonth()]:weekStart.getDate()+' '+MON[weekStart.getMonth()].slice(0,3)+' – '+e.getDate()+' '+MON[e.getMonth()].slice(0,3)}
+function openModal(dateStr,startMin){
+  const d=dateStr||dk(TODAY);let tf='08:00',tt='09:00';
+  if(startMin!=null){const sm=Math.round(startMin/15)*15;tf=pad(Math.floor(sm/60))+':'+pad(sm%60);const em=sm+60;tt=pad(Math.min(Math.floor(em/60),23))+':'+pad(em%60)}
+  form={name:'',date:d,timeFrom:tf,timeTo:tt,cat:'praca'};renderModal()
+}
+function closeModal(){document.getElementById('ov')?.remove()}
+function setCat(k){form.cat=k;renderModal()}
+function addEvent(){if(!form.name.trim())return;events.push({id:Date.now()+'',name:form.name.trim(),date:form.date,timeFrom:form.timeFrom,timeTo:form.timeTo,cat:form.cat});save();closeModal();renderGrid()}
+function delEvent(id){if(confirm('Usunąć wydarzenie?')){events=events.filter(e=>e.id!==id);save();renderGrid()}}
+function renderModal(){
+  document.getElementById('ov')?.remove();
+  const pills=Object.entries(CATS).map(([k,v])=>`<button class="cpill${form.cat===k?' on':''}" style="${form.cat===k?'background:'+v.c:''}" onclick="setCat('${k}')">${v.l}</button>`).join('');
+  const el=document.createElement('div');el.id='ov';el.className='overlay';
+  el.onclick=e=>{if(e.target===el)closeModal()};
+  el.innerHTML=`<div class="sheet"><div class="handle"></div><div class="sheet-title">Nowe wydarzenie</div>
+    <div class="field"><label>Nazwa</label><input id="en" type="text" placeholder="np. Siłownia, Praca..." value="${form.name}" oninput="form.name=this.value"></div>
+    <div class="field"><label>Data</label><input type="date" value="${form.date}" onchange="form.date=this.value"></div>
+    <div class="row2"><div class="field"><label>Od</label><input type="time" value="${form.timeFrom}" onchange="form.timeFrom=this.value"></div><div class="field"><label>Do</label><input type="time" value="${form.timeTo}" onchange="form.timeTo=this.value"></div></div>
+    <div class="field"><label>Kategoria</label><div class="cats">${pills}</div></div>
+    <div class="sheet-btns"><button class="bc" onclick="closeModal()">Anuluj</button><button class="bs" onclick="addEvent()">Dodaj</button></div>
+  </div>`;
+  document.body.appendChild(el);setTimeout(()=>document.getElementById('en')?.focus(),80)
+}
+function render(){
+  document.getElementById('mlabel').textContent=MON[TODAY.getMonth()]+' '+TODAY.getFullYear();
+  document.getElementById('wlabel').textContent=wlabel();
+  renderHeaders();renderGrid()
+}
+function renderHeaders(){
+  const days=Array.from({length:7},(_,i)=>addD(weekStart,i));const tk=dk(TODAY);
+  document.getElementById('dhdrs').innerHTML='<div></div>'+days.map((d,i)=>`<div class="dh"><div class="dow">${DOW[i]}</div><div class="dom${dk(d)===tk?' today':''}">${d.getDate()}</div></div>`).join('')
+}
+function renderGrid(){
+  const days=Array.from({length:7},(_,i)=>addD(weekStart,i));const tk=dk(TODAY);
+  const isThisWeek=days.some(d=>dk(d)===tk);
+  let h='<div>';
+  for(let hr=0;hr<24;hr++)h+=`<div class="time-cell"><span>${hr===0?'':pad(hr)+':00'}</span></div>`;
+  h+='</div>';
+  days.forEach(d=>{
+    const k=dk(d);const evs=events.filter(e=>e.date===k).sort((a,b)=>tm(a.timeFrom)-tm(b.timeFrom));
+    h+=`<div class="day-col" onclick="colClick(event,'${k}')">`;
+    for(let i=0;i<24;i++)h+='<div class="hour-cell"><div class="half-line"></div></div>';
+    evs.forEach(e=>{
+      const cat=CATS[e.cat]||CATS.inne;const top=tm(e.timeFrom)*HH/60;const ht=Math.max((tm(e.timeTo)-tm(e.timeFrom))*HH/60,18);
+      h+=`<div class="event" style="top:${top}px;height:${ht}px;background:${cat.c}" onclick="evClick(event,'${e.id}')"><div class="et">${e.name}</div>${ht>30?`<div class="es">${e.timeFrom}–${e.timeTo}</div>`:''}</div>`
+    });
+    if(isThisWeek&&k===tk){const nm=TODAY.getHours()*60+TODAY.getMinutes();h+=`<div class="now-line" style="top:${nm*HH/60}px"><div class="now-dot"></div></div>`}
+    h+='</div>'
+  });
+  document.getElementById('grid').innerHTML=h
+}
+function colClick(e,dateStr){if(e.target.closest('.event'))return;const col=e.currentTarget;const rect=col.getBoundingClientRect();const gw=document.getElementById('gwrap');openModal(dateStr,(e.clientY-rect.top+gw.scrollTop)/HH*60)}
+function evClick(e,id){e.stopPropagation();delEvent(id)}
+function scrollNow(){const gw=document.getElementById('gwrap');gw.scrollTop=Math.max(0,(TODAY.getHours()*60+TODAY.getMinutes())*HH/60-120)}
+render();setTimeout(scrollNow,100)
+</script>
+</body>
+</html>
